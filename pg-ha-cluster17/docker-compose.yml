@@ -1,0 +1,186 @@
+version: '3.8'
+
+services:
+  etcd1:
+    image: quay.io/coreos/etcd:v3.5.12
+    environment:
+      - ETCD_NAME=etcd1
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_INITIAL_ADVERTISE_PEER_URLS=http://etcd1:2380
+      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd1:2379
+      - ETCD_LISTEN_PEER_URLS=http://0.0.0.0:2380
+      - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379
+      - ETCD_INITIAL_CLUSTER=etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380
+      - ETCD_INITIAL_CLUSTER_STATE=new
+      - ETCD_ENABLE_V2=true
+    networks:
+      - patroni-net
+
+  etcd2:
+    image: quay.io/coreos/etcd:v3.5.12
+    environment:
+      - ETCD_NAME=etcd2
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_INITIAL_ADVERTISE_PEER_URLS=http://etcd2:2380
+      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd2:2379
+      - ETCD_LISTEN_PEER_URLS=http://0.0.0.0:2380
+      - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379
+      - ETCD_INITIAL_CLUSTER=etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380
+      - ETCD_INITIAL_CLUSTER_STATE=new
+      - ETCD_ENABLE_V2=true
+    networks:
+      - patroni-net
+
+  etcd3:
+    image: quay.io/coreos/etcd:v3.5.12
+    environment:
+      - ETCD_NAME=etcd3
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_INITIAL_ADVERTISE_PEER_URLS=http://etcd3:2380
+      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd3:2379
+      - ETCD_LISTEN_PEER_URLS=http://0.0.0.0:2380
+      - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379
+      - ETCD_INITIAL_CLUSTER=etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380
+      - ETCD_INITIAL_CLUSTER_STATE=new
+      - ETCD_ENABLE_V2=true
+    networks:
+      - patroni-net
+
+  pg1:
+    image: ghcr.io/zalando/spilo-17:4.0-p2
+    user: "101"
+    environment:
+      SPILO_CONFIGURATION: >
+        {
+          "scope": "pg-ha",
+          "name": "pg1",
+          "etcd": {
+            "hosts": "etcd1:2379,etcd2:2379,etcd3:2379"
+          },
+          "restapi": {
+            "listen": "0.0.0.0:8008",
+            "connect_address": "pg1:8008"
+          },
+          "postgresql": {
+            "connect_address": "pg1:5432",
+            "data_dir": "/home/postgres/pgdata/data",
+            "bin_dir": "/usr/lib/postgresql/17/bin",
+            "authentication": {
+              "superuser": {
+                "username": "postgres",
+                "password": "postgres"
+              },
+              "replication": {
+                "username": "replicator",
+                "password": "rep-pass"
+              }
+            },
+            "pg_hba": [
+              "local all all trust",
+              "local replication replicator trust",
+              "host all all 0.0.0.0/0 md5",
+              "host replication replicator 0.0.0.0/0 md5"
+            ]
+          }
+        }
+    volumes:
+      - ./pgdata/pg1:/home/postgres/pgdata
+    networks:
+      - patroni-net
+
+  pg2:
+    image: ghcr.io/zalando/spilo-17:4.0-p2
+    user: "101"
+    environment:
+      SPILO_CONFIGURATION: >
+        {
+            "scope": "pg-ha",
+            "name": "pg2",
+            "etcd": {
+              "hosts": "etcd1:2379,etcd2:2379,etcd3:2379"
+            },
+            "restapi": {
+              "listen": "0.0.0.0:8008",
+              "connect_address": "pg2:8008"
+            },
+            "postgresql": {
+              "connect_address": "pg2:5432",
+              "data_dir": "/home/postgres/pgdata/data",
+              "bin_dir": "/usr/lib/postgresql/17/bin",
+              "authentication": {
+                "superuser": {
+                  "username": "postgres",
+                  "password": "postgres"
+                },
+                "replication": {
+                  "username": "replicator",
+                  "password": "rep-pass"
+                }
+              },
+              "pg_hba": [
+                "local all all trust",
+                "local replication replicator trust",
+                "host all all 0.0.0.0/0 md5",
+                "host replication replicator 0.0.0.0/0 md5"
+              ]
+            }
+          }
+    volumes:
+      - ./pgdata/pg2:/home/postgres/pgdata
+    networks:
+      - patroni-net
+
+  pg3:
+    image: ghcr.io/zalando/spilo-17:4.0-p2
+    user: "101"
+    environment:
+      SPILO_CONFIGURATION: >
+        {
+            "scope": "pg-ha",
+            "name": "pg3",
+            "etcd": {
+              "hosts": "etcd1:2379,etcd2:2379,etcd3:2379"
+            },
+            "restapi": {
+              "listen": "0.0.0.0:8008",
+              "connect_address": "pg3:8008"
+            },
+            "postgresql": {
+              "connect_address": "pg3:5432",
+              "data_dir": "/home/postgres/pgdata/data",
+              "bin_dir": "/usr/lib/postgresql/17/bin",
+              "authentication": {
+                "superuser": {
+                  "username": "postgres",
+                  "password": "postgres"
+                },
+                "replication": {
+                  "username": "replicator",
+                  "password": "rep-pass"
+                }
+              },
+              "pg_hba": [
+                "local all all trust",
+                "local replication replicator trust",
+                "host all all 0.0.0.0/0 md5",
+                "host replication replicator 0.0.0.0/0 md5"
+              ]
+            }
+          }
+    volumes:
+      - ./pgdata/pg3:/home/postgres/pgdata
+    networks:
+      - patroni-net
+
+  haproxy:
+    image: haproxy:2.9
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+    ports:
+      - "5000:5000"
+      - "5001:5001"
+    networks:
+      - patroni-net
+
+networks:
+  patroni-net:
